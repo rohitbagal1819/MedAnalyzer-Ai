@@ -1,0 +1,288 @@
+<%- include('../partials/header') %>
+  <%- include('../partials/navbar') %>
+
+    <div class="page-container">
+      <!-- Page Header -->
+      <div class="page-header">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+          <div>
+            <h1 class="page-title">Welcome back, <%= patient.name %> 👋</h1>
+            <p class="page-subtitle">Here's your health overview at a glance</p>
+          </div>
+          <a href="/upload" class="btn btn-primary-custom">
+            <i class="bi bi-cloud-upload me-2"></i>Upload Report
+          </a>
+        </div>
+      </div>
+
+      <!-- Stats Grid -->
+      <div class="dashboard-grid">
+        <!-- Health Score Card -->
+        <div class="card-custom stat-card">
+          <div class="card-icon card-icon-green">
+            <i class="bi bi-heart-pulse"></i>
+          </div>
+          <div class="stat-info">
+            <h3>
+              <%= healthScore %>
+            </h3>
+            <p>Health Score</p>
+            <% if (healthScore>= 70) { %>
+              <span class="stat-change up">● Good</span>
+              <% } else if (healthScore>= 40) { %>
+                <span class="stat-change" style="background:var(--warning-50);color:var(--warning-600);">●
+                  Moderate</span>
+                <% } else { %>
+                  <span class="stat-change down">● Needs Attention</span>
+                  <% } %>
+          </div>
+        </div>
+
+        <!-- Reports Count -->
+        <div class="card-custom stat-card">
+          <div class="card-icon card-icon-blue">
+            <i class="bi bi-file-earmark-medical"></i>
+          </div>
+          <div class="stat-info">
+            <h3>
+              <%= reports.length %>
+            </h3>
+            <p>Reports Uploaded</p>
+          </div>
+        </div>
+
+        <!-- Anomalies Count -->
+        <div class="card-custom stat-card">
+          <div class="card-icon card-icon-red">
+            <i class="bi bi-exclamation-triangle"></i>
+          </div>
+          <div class="stat-info">
+            <h3>
+              <%= allAnomalies.length %>
+            </h3>
+            <p>Anomalies Detected</p>
+            <% if (allAnomalies.length> 0) { %>
+              <span class="stat-change down">⚠ Review needed</span>
+              <% } else { %>
+                <span class="stat-change up">✓ All clear</span>
+                <% } %>
+          </div>
+        </div>
+
+        <!-- Drug Interactions -->
+        <div class="card-custom stat-card">
+          <div class="card-icon card-icon-amber">
+            <i class="bi bi-capsule"></i>
+          </div>
+          <div class="stat-info">
+            <h3>
+              <%= allDrugInteractions.length %>
+            </h3>
+            <p>Drug Interactions</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-4">
+        <!-- Health Score Ring + Chart -->
+        <div class="col-lg-4">
+          <div class="card-custom">
+            <h3 style="font-weight:700; font-size:1rem; margin-bottom:1.5rem;">
+              <i class="bi bi-heart-pulse me-2" style="color:var(--primary-500);"></i>Health Score
+            </h3>
+            <div class="health-score-container">
+              <div class="health-score-ring">
+                <canvas id="healthScoreChart"></canvas>
+                <div class="health-score-value">
+                  <div class="score-number">
+                    <%= healthScore %>
+                  </div>
+                  <div class="score-label">out of 100</div>
+                </div>
+              </div>
+            </div>
+            <div class="mt-3 text-center">
+              <% if (healthScore>= 80) { %>
+                <span class="status-badge status-normal"><span class="status-dot"></span> Excellent Health</span>
+                <% } else if (healthScore>= 60) { %>
+                  <span class="status-badge status-normal"><span class="status-dot"></span> Good Health</span>
+                  <% } else if (healthScore>= 40) { %>
+                    <span class="status-badge status-high"><span class="status-dot"></span> Moderate</span>
+                    <% } else { %>
+                      <span class="status-badge status-critical"><span class="status-dot"></span> Needs Attention</span>
+                      <% } %>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Anomalies -->
+        <div class="col-lg-8">
+          <div class="card-custom">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+              <h3 style="font-weight:700; font-size:1rem;">
+                <i class="bi bi-exclamation-diamond me-2" style="color:var(--danger-500);"></i>Recent Alerts
+              </h3>
+              <a href="/lab-results" style="font-size:0.85rem; font-weight:600;">View All →</a>
+            </div>
+
+            <% if (allAnomalies.length> 0) { %>
+              <% allAnomalies.slice(0, 5).forEach(anomaly=> { %>
+                <div class="alert-custom alert-<%= anomaly.severity === 'critical' ? 'critical' : 'warning' %>">
+                  <i class="bi bi-<%= anomaly.severity === 'critical' ? 'exclamation-octagon-fill' : 'exclamation-triangle-fill' %>"
+                    <%- `style="font-size:1.1rem; color: var(--${anomaly.severity === 'critical' ? 'danger' : 'warning'}-500);"` %>></i>
+                  <div>
+                    <strong>
+                      <%= anomaly.parameter %>
+                    </strong>
+                    <span style="color:var(--text-muted); font-size:0.85rem;"> — Value: <%= anomaly.value %></span>
+                    <p style="margin:0.25rem 0 0; font-size:0.85rem; color:var(--text-secondary);">
+                      <%= anomaly.message %>
+                    </p>
+                  </div>
+                  <span
+                    class="severity-badge severity-<%= anomaly.severity === 'critical' ? 'severe' : 'moderate' %> ms-auto">
+                    <%= anomaly.severity %>
+                  </span>
+                </div>
+                <% }) %>
+                  <% } else { %>
+                    <div class="empty-state" style="padding:2rem;">
+                      <div class="empty-state-icon">🎉</div>
+                      <h3>No Anomalies</h3>
+                      <p>All your health parameters are within normal range!</p>
+                    </div>
+                    <% } %>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Reports -->
+      <div class="row mt-4">
+        <div class="col-12">
+          <div class="card-custom">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+              <h3 style="font-weight:700; font-size:1rem;">
+                <i class="bi bi-file-earmark-text me-2" style="color:var(--primary-500);"></i>Recent Reports
+              </h3>
+              <a href="/timeline" style="font-size:0.85rem; font-weight:600;">View Timeline →</a>
+            </div>
+
+            <% if (reports.length> 0) { %>
+              <div class="table-responsive">
+                <table class="table-custom">
+                  <thead>
+                    <tr>
+                      <th>Report</th>
+                      <th>Type</th>
+                      <th>Date</th>
+                      <th>Status</th>
+                      <th>Score</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% reports.slice(0, 5).forEach(report=> { %>
+                      <tr>
+                        <td>
+                          <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-<%= report.fileType === 'pdf' ? 'file-pdf' : 'file-image' %>"
+                              style="font-size:1.2rem; color:var(--primary-500);"></i>
+                            <span style="font-weight:500;">
+                              <%= report.fileName %>
+                            </span>
+                          </div>
+                        </td>
+                        <td>
+                          <%= report.reportType %>
+                        </td>
+                        <td>
+                          <%= new Date(report.uploadDate).toLocaleDateString('en-IN', { day:'numeric', month:'short',
+                            year:'numeric' }) %>
+                        </td>
+                        <td>
+                          <span class="processing-badge processing-<%= report.processingStatus %>">
+                            <% if (report.processingStatus==='processing' ) { %><span class="spinner-dot"></span>
+                              <% } %>
+                                <%= report.processingStatus %>
+                          </span>
+                        </td>
+                        <td>
+                          <% if (report.processingStatus==='done' ) { %>
+                            <div
+                              class="mini-score <%= report.healthScore >= 70 ? 'score-good' : report.healthScore >= 40 ? 'score-moderate' : 'score-poor' %>">
+                              <%= report.healthScore %>
+                            </div>
+                            <% } else { %>
+                              <span style="color:var(--text-muted);">—</span>
+                              <% } %>
+                        </td>
+                        <td>
+                          <form action="/reports/delete/<%= report._id %>" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this report?');">
+                            <button type="submit" class="btn btn-sm" style="color: var(--danger-500); background: transparent; border: none;" title="Delete Report">
+                              <i class="bi bi-trash"></i>
+                            </button>
+                          </form>
+                        </td>
+                      </tr>
+                      <% }) %>
+                  </tbody>
+                </table>
+              </div>
+              <% } else { %>
+                <div class="empty-state">
+                  <div class="empty-state-icon">📄</div>
+                  <h3>No Reports Yet</h3>
+                  <p>Upload your first medical report to get started</p>
+                  <a href="/upload" class="btn btn-primary-custom mt-3">
+                    <i class="bi bi-cloud-upload me-2"></i>Upload Report
+                  </a>
+                </div>
+                <% } %>
+          </div>
+        </div>
+      </div>
+
+      <!-- Drug Interactions Quick View -->
+      <% if (allDrugInteractions.length> 0) { %>
+        <div class="row mt-4">
+          <div class="col-12">
+            <div class="card-custom">
+              <div class="d-flex align-items-center justify-content-between mb-3">
+                <h3 style="font-weight:700; font-size:1rem;">
+                  <i class="bi bi-capsule me-2" style="color:var(--warning-500);"></i>Drug Interaction Warnings
+                </h3>
+                <a href="/drug-interactions" style="font-size:0.85rem; font-weight:600;">View All →</a>
+              </div>
+              <% allDrugInteractions.slice(0, 3).forEach(di=> { %>
+                <div class="interaction-card interaction-<%= di.severity %>">
+                  <i class="bi bi-exclamation-triangle-fill" style="font-size:1.1rem;"></i>
+                  <div style="flex:1;">
+                    <strong>
+                      <%= di.drug1 %>
+                    </strong> × <strong>
+                      <%= di.drug2 %>
+                    </strong>
+                    <p style="margin:0.25rem 0 0; font-size:0.85rem; color:var(--text-secondary);">
+                      <%= di.description %>
+                    </p>
+                  </div>
+                  <span class="severity-badge severity-<%= di.severity %>">
+                    <%= di.severity %>
+                  </span>
+                </div>
+                <% }) %>
+            </div>
+          </div>
+        </div>
+        <% } %>
+    </div>
+
+    <script src="/js/charts.js"></script>
+    <script>
+      // Initialize health score chart
+      if (typeof initHealthScoreChart === 'function') {
+        initHealthScoreChart(Number('<%= healthScore %>'));
+      }
+    </script>
+
+    <%- include('../partials/footer') %>

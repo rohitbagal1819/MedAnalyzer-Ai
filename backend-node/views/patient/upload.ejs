@@ -1,0 +1,107 @@
+<%- include('../partials/header') %>
+<%- include('../partials/navbar') %>
+
+<div class="page-container">
+  <div class="page-header">
+    <h1 class="page-title"><i class="bi bi-cloud-upload me-2" style="color:var(--primary-500);"></i>Upload Medical Report</h1>
+    <p class="page-subtitle">Upload a PDF or image of your medical report for AI-powered analysis</p>
+  </div>
+
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <form id="uploadForm" action="/reports/upload" method="POST" enctype="multipart/form-data">
+        <!-- Dropzone -->
+        <div class="upload-dropzone" id="dropzone">
+          <div class="upload-icon">
+            <i class="bi bi-cloud-arrow-up"></i>
+          </div>
+          <h3 class="upload-title">Drag & drop your report here</h3>
+          <p class="upload-subtitle">or click to browse files</p>
+          <p style="font-size:0.8rem; color:var(--text-muted); margin-top:0.5rem;">
+            Supports: PDF, JPEG, PNG, TIFF, BMP — Max 20MB
+          </p>
+          <input type="file" name="reportFile" id="fileInput" 
+                 accept=".pdf,.jpg,.jpeg,.png,.tiff,.bmp" 
+                 style="display:none;" required>
+        </div>
+
+        <!-- File Preview -->
+        <div id="filePreview" style="display:none;" class="card-custom mt-3">
+          <div class="d-flex align-items-center gap-3">
+            <div class="card-icon card-icon-blue" style="margin-bottom:0;">
+              <i class="bi bi-file-earmark" id="fileIcon"></i>
+            </div>
+            <div style="flex:1;">
+              <div style="font-weight:600;" id="fileName">file.pdf</div>
+              <div style="font-size:0.8rem; color:var(--text-muted);" id="fileSize">0 KB</div>
+            </div>
+            <button type="button" class="btn btn-sm" style="color:var(--danger-500);" onclick="clearFile()">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Upload Progress -->
+        <div class="upload-progress" id="uploadProgress">
+          <div class="card-custom mt-3">
+            <div class="d-flex align-items-center gap-3 mb-2">
+              <div class="spinner-border spinner-border-sm" style="color:var(--primary-500);" role="status">
+                <span class="visually-hidden">Processing...</span>
+              </div>
+              <span style="font-weight:600; font-size:0.9rem;" id="progressLabel">Uploading report...</span>
+            </div>
+            <div class="progress-bar-custom">
+              <div class="progress-bar-fill" id="progressBar"></div>
+            </div>
+            <p class="progress-text" id="progressText">Sending file to AI service...</p>
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="mt-4 text-center" id="submitArea">
+          <button type="submit" class="btn btn-primary-custom btn-lg" id="uploadBtn" disabled>
+            <i class="bi bi-cpu me-2"></i>Analyze Report with AI
+          </button>
+          <p style="font-size:0.8rem; color:var(--text-muted); margin-top:0.75rem;">
+            <i class="bi bi-shield-check me-1"></i>Your data is encrypted and processed securely
+          </p>
+        </div>
+      </form>
+
+      <!-- Info Cards -->
+      <div class="row g-3 mt-4">
+        <div class="col-md-4">
+          <div class="card-custom" style="padding:1.25rem;">
+            <div class="d-flex align-items-center gap-2 mb-2">
+              <i class="bi bi-file-earmark-text" style="color:var(--primary-500);"></i>
+              <strong style="font-size:0.85rem;">OCR Extraction</strong>
+            </div>
+            <p style="font-size:0.8rem; color:var(--text-muted); margin:0;">Text extracted using Tesseract OCR with image preprocessing</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card-custom" style="padding:1.25rem;">
+            <div class="d-flex align-items-center gap-2 mb-2">
+              <i class="bi bi-cpu" style="color:var(--accent-500);"></i>
+              <strong style="font-size:0.85rem;">NLP Analysis</strong>
+            </div>
+            <p style="font-size:0.8rem; color:var(--text-muted); margin:0;">Lab values, medications, and diseases identified by spaCy NER</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card-custom" style="padding:1.25rem;">
+            <div class="d-flex align-items-center gap-2 mb-2">
+              <i class="bi bi-capsule" style="color:var(--danger-500);"></i>
+              <strong style="font-size:0.85rem;">Drug Checks</strong>
+            </div>
+            <p style="font-size:0.8rem; color:var(--text-muted); margin:0;">Medications cross-checked against OpenFDA for interactions</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/upload.js"></script>
+
+<%- include('../partials/footer') %>

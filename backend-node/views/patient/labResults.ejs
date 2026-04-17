@@ -1,0 +1,152 @@
+<%- include('../partials/header') %>
+<%- include('../partials/navbar') %>
+
+<div class="page-container">
+  <div class="page-header">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+      <div>
+        <h1 class="page-title"><i class="bi bi-clipboard2-pulse me-2" style="color:var(--primary-500);"></i>Lab Results</h1>
+        <p class="page-subtitle">All extracted lab values across your medical reports</p>
+      </div>
+      <div class="d-flex gap-2">
+        <button class="btn btn-glass btn-sm" onclick="filterStatus('all')" id="filterAll">All</button>
+        <button class="btn btn-glass btn-sm" onclick="filterStatus('normal')" id="filterNormal">Normal</button>
+        <button class="btn btn-glass btn-sm" onclick="filterStatus('high')" id="filterHigh">High</button>
+        <button class="btn btn-glass btn-sm" onclick="filterStatus('low')" id="filterLow">Low</button>
+        <button class="btn btn-glass btn-sm" onclick="filterStatus('critical')" id="filterCritical">Critical</button>
+      </div>
+    </div>
+  </div>
+
+  <% if (labValues.length > 0) { %>
+    <!-- Summary Cards -->
+    <div class="dashboard-grid mb-4">
+      <div class="card-custom stat-card">
+        <div class="card-icon card-icon-blue" style="margin-bottom:0;"><i class="bi bi-clipboard2-data"></i></div>
+        <div class="stat-info">
+          <h3><%= labValues.length %></h3>
+          <p>Total Parameters</p>
+        </div>
+      </div>
+      <div class="card-custom stat-card">
+        <div class="card-icon card-icon-green" style="margin-bottom:0;"><i class="bi bi-check-circle"></i></div>
+        <div class="stat-info">
+          <h3><%= labValues.filter(l => l.status === 'normal').length %></h3>
+          <p>Normal Values</p>
+        </div>
+      </div>
+      <div class="card-custom stat-card">
+        <div class="card-icon card-icon-amber" style="margin-bottom:0;"><i class="bi bi-arrow-up-circle"></i></div>
+        <div class="stat-info">
+          <h3><%= labValues.filter(l => l.status === 'high' || l.status === 'low').length %></h3>
+          <p>Flagged Values</p>
+        </div>
+      </div>
+      <div class="card-custom stat-card">
+        <div class="card-icon card-icon-red" style="margin-bottom:0;"><i class="bi bi-exclamation-octagon"></i></div>
+        <div class="stat-info">
+          <h3><%= labValues.filter(l => l.status === 'critical').length %></h3>
+          <p>Critical Values</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lab Values Table -->
+    <div class="card-custom">
+      <div class="table-responsive">
+        <table class="table-custom" id="labTable">
+          <thead>
+            <tr>
+              <th>Test Name</th>
+              <th>Value</th>
+              <th>Unit</th>
+              <th>Normal Range</th>
+              <th>Status</th>
+              <th>Report Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% labValues.forEach(lv => { %>
+              <tr class="lab-row" data-status="<%= lv.status %>">
+                <td>
+                  <strong><%= lv.testName %></strong>
+                </td>
+                <td>
+                  <span style="font-family:var(--font-mono); font-weight:600;"><%= lv.value %></span>
+                </td>
+                <td style="color:var(--text-muted);"><%= lv.unit %></td>
+                <td style="font-size:0.85rem; color:var(--text-muted);"><%= lv.normalRange %></td>
+                <td>
+                  <span class="status-badge status-<%= lv.status %>">
+                    <span class="status-dot"></span>
+                    <%= lv.status %>
+                  </span>
+                </td>
+                <td style="font-size:0.85rem; color:var(--text-muted);">
+                  <%= new Date(lv.reportDate).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' }) %>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Lab Trend Chart -->
+    <div class="card-custom mt-4">
+      <h3 style="font-weight:700; font-size:1rem; margin-bottom:1.5rem;">
+        <i class="bi bi-graph-up me-2" style="color:var(--primary-500);"></i>Lab Value Trends
+      </h3>
+      <div style="height:300px;">
+        <canvas id="labTrendChart"></canvas>
+      </div>
+    </div>
+
+  <% } else { %>
+    <div class="card-custom">
+      <div class="empty-state">
+        <div class="empty-state-icon">🔬</div>
+        <h3>No Lab Results Yet</h3>
+        <p>Upload a medical report to see extracted lab values here</p>
+        <a href="/upload" class="btn btn-primary-custom mt-3">
+          <i class="bi bi-cloud-upload me-2"></i>Upload Report
+        </a>
+      </div>
+    </div>
+  <% } %>
+</div>
+
+<script>
+// Filter lab results by status
+function filterStatus(status) {
+  const rows = document.querySelectorAll('.lab-row');
+  rows.forEach(row => {
+    if (status === 'all' || row.dataset.status === status) {
+      row.style.display = '';
+    } else {
+      row.style.display = 'none';
+    }
+  });
+  // Update active button
+  document.querySelectorAll('[id^="filter"]').forEach(btn => {
+    btn.style.borderColor = 'var(--border-color)';
+    btn.style.color = 'var(--text-primary)';
+  });
+  const activeBtn = document.getElementById('filter' + status.charAt(0).toUpperCase() + status.slice(1));
+  if (activeBtn) {
+    activeBtn.style.borderColor = 'var(--primary-400)';
+    activeBtn.style.color = 'var(--primary-500)';
+  }
+}
+</script>
+
+<script src="/js/charts.js"></script>
+<script>
+  const labDataRaw = '<%- encodeURIComponent(JSON.stringify(labValues || [])) %>';
+  const labData = JSON.parse(decodeURIComponent(labDataRaw));
+  if (labData.length > 0 && typeof initLabTrendChart === 'function') {
+    initLabTrendChart(labData);
+  }
+</script>
+
+<%- include('../partials/footer') %>

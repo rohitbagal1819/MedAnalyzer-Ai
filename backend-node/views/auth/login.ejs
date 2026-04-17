@@ -1,0 +1,68 @@
+<%- include('../partials/header') %>
+
+<div class="auth-container">
+  <div class="auth-card slide-up">
+    <div class="text-center mb-3">
+      <div style="width:48px;height:48px;border-radius:12px;background:var(--gradient-primary);display:inline-flex;align-items:center;justify-content:center;margin-bottom:1rem;">
+        <i class="bi bi-heart-pulse" style="color:white;font-size:1.3rem;"></i>
+      </div>
+    </div>
+    <h1 class="auth-title">Welcome Back</h1>
+    <p class="auth-subtitle">Sign in to your MedAnalyzer AI account</p>
+
+    <% if (typeof errors !== 'undefined' && errors.length > 0) { %>
+      <% errors.forEach(err => { %>
+        <div class="alert-custom alert-critical" style="margin-bottom: 1rem;">
+          <i class="bi bi-exclamation-circle" style="color:var(--danger-500);"></i>
+          <span style="font-size:0.85rem;"><%= err.msg %></span>
+        </div>
+      <% }) %>
+    <% } %>
+
+    <form action="/login" method="POST" id="loginForm">
+      <!-- Role Selector -->
+      <div class="role-selector">
+        <button type="button" class="role-option active" data-role="patient" onclick="selectRole(this, 'patient')">
+          <i class="bi bi-person me-1"></i>Patient
+        </button>
+        <button type="button" class="role-option" data-role="doctor" onclick="selectRole(this, 'doctor')">
+          <i class="bi bi-hospital me-1"></i>Doctor
+        </button>
+      </div>
+      <input type="hidden" name="role" id="roleInput" value="patient">
+
+      <div class="form-floating-custom">
+        <label for="email">Email Address</label>
+        <input type="email" class="form-control" id="email" name="email" 
+               placeholder="you@example.com" required
+               value="<%= typeof formData !== 'undefined' && formData.email ? formData.email : '' %>">
+      </div>
+
+      <div class="form-floating-custom">
+        <label for="password">Password</label>
+        <input type="password" class="form-control" id="password" name="password" 
+               placeholder="Enter your password" required>
+      </div>
+
+      <button type="submit" class="btn btn-primary-custom w-100 py-2 mb-3">
+        <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+      </button>
+
+      <p class="text-center" style="font-size:0.9rem; color: var(--text-muted);">
+        Don't have an account? <a href="/register" style="font-weight:600;">Create one</a>
+      </p>
+    </form>
+  </div>
+</div>
+
+<script>
+function selectRole(btn, role) {
+  document.querySelectorAll('.role-option').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('roleInput').value = role;
+}
+</script>
+
+<script src="/js/theme.js"></script>
+</body>
+</html>

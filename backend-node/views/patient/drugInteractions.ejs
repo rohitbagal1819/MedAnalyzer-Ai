@@ -1,0 +1,92 @@
+<%- include('../partials/header') %>
+<%- include('../partials/navbar') %>
+
+<div class="page-container">
+  <div class="page-header">
+    <h1 class="page-title"><i class="bi bi-capsule me-2" style="color:var(--warning-500);"></i>Drug Interactions</h1>
+    <p class="page-subtitle">Detected medications and potential interaction warnings from your reports</p>
+  </div>
+
+  <div class="row g-4">
+    <!-- Medications List -->
+    <div class="col-lg-5">
+      <div class="card-custom">
+        <h3 style="font-weight:700; font-size:1rem; margin-bottom:1.5rem;">
+          <i class="bi bi-prescription2 me-2" style="color:var(--accent-500);"></i>Detected Medications
+          <span class="ms-2" style="font-size:0.8rem; color:var(--text-muted);">(<%= medications.length %>)</span>
+        </h3>
+        <% if (medications.length > 0) { %>
+          <% medications.forEach(med => { %>
+            <div class="d-flex align-items-center gap-3 mb-3 p-2" style="background:var(--bg-primary); border-radius:var(--radius-sm);">
+              <div style="width:36px;height:36px;border-radius:8px;background:rgba(139,92,246,0.1);display:flex;align-items:center;justify-content:center;">
+                <i class="bi bi-capsule" style="color:var(--accent-500);"></i>
+              </div>
+              <div style="flex:1;">
+                <div style="font-weight:600; font-size:0.9rem;"><%= med.name %></div>
+                <div style="font-size:0.75rem; color:var(--text-muted);">
+                  <% if (med.dosage) { %><%= med.dosage %><% } %>
+                  <% if (med.frequency) { %> • <%= med.frequency %><% } %>
+                </div>
+              </div>
+              <span style="font-size:0.7rem; color:var(--text-muted);">
+                <%= new Date(med.reportDate).toLocaleDateString('en-IN', {day:'numeric',month:'short'}) %>
+              </span>
+            </div>
+          <% }) %>
+        <% } else { %>
+          <div class="empty-state" style="padding:1.5rem;">
+            <p style="color:var(--text-muted);">No medications detected from reports</p>
+          </div>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- Interactions -->
+    <div class="col-lg-7">
+      <div class="card-custom">
+        <h3 style="font-weight:700; font-size:1rem; margin-bottom:1.5rem;">
+          <i class="bi bi-exclamation-diamond me-2" style="color:var(--danger-500);"></i>Interaction Warnings
+          <span class="ms-2" style="font-size:0.8rem; color:var(--text-muted);">(<%= interactions.length %>)</span>
+        </h3>
+
+        <% if (interactions.length > 0) { %>
+          <% interactions.forEach(di => { %>
+            <div class="interaction-card interaction-<%= di.severity %>">
+              <div>
+                <% if (di.severity === 'severe') { %>
+                  <i class="bi bi-exclamation-octagon-fill" style="color:var(--danger-500); font-size:1.3rem;"></i>
+                <% } else if (di.severity === 'moderate') { %>
+                  <i class="bi bi-exclamation-triangle-fill" style="color:var(--warning-500); font-size:1.3rem;"></i>
+                <% } else { %>
+                  <i class="bi bi-info-circle-fill" style="color:var(--primary-500); font-size:1.3rem;"></i>
+                <% } %>
+              </div>
+              <div style="flex:1;">
+                <div class="d-flex align-items-center gap-2 mb-1">
+                  <strong style="font-size:0.95rem;"><%= di.drug1 %></strong>
+                  <i class="bi bi-arrow-left-right" style="color:var(--text-muted);"></i>
+                  <strong style="font-size:0.95rem;"><%= di.drug2 %></strong>
+                  <span class="severity-badge severity-<%= di.severity %> ms-auto"><%= di.severity %></span>
+                </div>
+                <p style="font-size:0.85rem; color:var(--text-secondary); margin:0; line-height:1.5;"><%= di.description %></p>
+              </div>
+            </div>
+          <% }) %>
+
+          <div class="alert-custom alert-info mt-3">
+            <i class="bi bi-info-circle" style="color:var(--primary-500);"></i>
+            <span style="font-size:0.85rem;">Drug interactions are checked against the OpenFDA database. Always consult your doctor before making medication changes.</span>
+          </div>
+        <% } else { %>
+          <div class="empty-state" style="padding:2rem;">
+            <div class="empty-state-icon">✅</div>
+            <h3>No Interactions Found</h3>
+            <p>No known drug interactions detected among your medications</p>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,118 @@
+<%- include('../partials/header') %>
+<%- include('../partials/navbar') %>
+
+<div class="page-container">
+  <div class="page-header">
+    <div class="d-flex align-items-center gap-3 mb-2">
+      <a href="/doctor/dashboard" class="btn btn-glass btn-sm"><i class="bi bi-arrow-left"></i></a>
+      <div>
+        <h1 class="page-title"><%= patient.name %></h1>
+        <p class="page-subtitle">Full health overview for this patient</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Patient Info Bar -->
+  <div class="card-custom mb-4">
+    <div class="d-flex align-items-center flex-wrap gap-4">
+      <div class="patient-avatar" style="width:60px;height:60px;font-size:1.5rem;">
+        <%= patient.name.charAt(0).toUpperCase() %>
+      </div>
+      <div style="flex:1;">
+        <h3 style="font-weight:700; font-size:1.2rem; margin-bottom:0.25rem;"><%= patient.name %></h3>
+        <div class="d-flex gap-3 flex-wrap" style="font-size:0.85rem; color:var(--text-muted);">
+          <span><i class="bi bi-envelope me-1"></i><%= patient.email %></span>
+          <span><i class="bi bi-person me-1"></i><%= patient.age || '—' %> yrs, <%= patient.gender || '—' %></span>
+          <span><i class="bi bi-droplet me-1"></i><%= patient.bloodGroup || '—' %></span>
+          <% if (patient.healthId) { %><span><i class="bi bi-card-text me-1"></i><%= patient.healthId %></span><% } %>
+        </div>
+      </div>
+      <div class="text-center">
+        <div class="mini-score <%= patient.healthScore >= 70 ? 'score-good' : patient.healthScore >= 40 ? 'score-moderate' : 'score-poor' %>" style="width:60px;height:60px;font-size:1.2rem;">
+          <%= patient.healthScore %>
+        </div>
+        <span style="font-size:0.7rem; color:var(--text-muted);">Health Score</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- Reports -->
+    <div class="col-lg-8">
+      <div class="card-custom">
+        <h3 style="font-weight:700; font-size:1rem; margin-bottom:1.5rem;">
+          <i class="bi bi-file-earmark-medical me-2" style="color:var(--primary-500);"></i>Reports (<%= reports.length %>)
+        </h3>
+        <% if (reports.length > 0) { %>
+          <% reports.forEach(report => { %>
+            <div style="border:1px solid var(--border-color); border-radius:var(--radius-md); padding:1rem; margin-bottom:0.75rem;">
+              <div class="d-flex align-items-start justify-content-between mb-2">
+                <div>
+                  <h4 style="font-weight:600; font-size:0.95rem; margin:0;"><%= report.reportType %></h4>
+                  <span style="font-size:0.8rem; color:var(--text-muted);">
+                    <%= new Date(report.uploadDate).toLocaleDateString('en-IN', {day:'numeric', month:'long', year:'numeric'}) %>
+                  </span>
+                </div>
+                <span class="processing-badge processing-<%= report.processingStatus %>"><%= report.processingStatus %></span>
+              </div>
+              <% if (report.processingStatus === 'done' && report.extractedData) { %>
+                <% if (report.extractedData.labValues && report.extractedData.labValues.length > 0) { %>
+                  <div class="d-flex flex-wrap gap-1 mt-2">
+                    <% report.extractedData.labValues.forEach(lv => { %>
+                      <span class="status-badge status-<%= lv.status %>" style="font-size:0.7rem;">
+                        <span class="status-dot"></span><%= lv.testName %>: <%= lv.value %>
+                      </span>
+                    <% }) %>
+                  </div>
+                <% } %>
+                <% if (report.extractedData.medications && report.extractedData.medications.length > 0) { %>
+                  <div class="d-flex flex-wrap gap-1 mt-2">
+                    <% report.extractedData.medications.forEach(med => { %>
+                      <span style="background:rgba(139,92,246,0.08);color:var(--accent-600);padding:0.15rem 0.5rem;border-radius:var(--radius-full);font-size:0.7rem;">
+                        💊 <%= med.name %>
+                      </span>
+                    <% }) %>
+                  </div>
+                <% } %>
+              <% } %>
+            </div>
+          <% }) %>
+        <% } else { %>
+          <div class="empty-state"><p>No reports uploaded by this patient yet.</p></div>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- Notes Sidebar -->
+    <div class="col-lg-4">
+      <div class="card-custom mb-3">
+        <h3 style="font-weight:700; font-size:1rem; margin-bottom:1rem;">
+          <i class="bi bi-journal-text me-2" style="color:var(--accent-500);"></i>Consultation Notes
+        </h3>
+        <form action="/doctor/notes/<%= patient._id %>" method="POST" class="mb-3">
+          <div class="form-floating-custom">
+            <label for="note">Add Note</label>
+            <textarea class="form-control" id="note" name="note" rows="3" placeholder="Write a consultation note..." required style="resize:vertical;min-height:80px;"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary-custom btn-sm w-100">
+            <i class="bi bi-plus-lg me-1"></i>Add Note
+          </button>
+        </form>
+        <% if (notes.length > 0) { %>
+          <% notes.forEach(n => { %>
+            <div class="note-card">
+              <div class="note-date">
+                <i class="bi bi-calendar3 me-1"></i><%= new Date(n.date).toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'numeric'}) %>
+              </div>
+              <div class="note-content"><%= n.note %></div>
+            </div>
+          <% }) %>
+        <% } else { %>
+          <p style="font-size:0.85rem; color:var(--text-muted); text-align:center;">No notes yet</p>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

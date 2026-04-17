@@ -1,0 +1,249 @@
+<%- include('../partials/header') %>
+  <%- include('../partials/navbar') %>
+
+    <div class="page-container">
+      <div class="page-header no-print">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+          <div>
+            <h1 class="page-title"><i class="bi bi-file-medical me-2" style="color:var(--primary-500);"></i>Doctor
+              Summary</h1>
+            <p class="page-subtitle">One-page printable health summary for your doctor</p>
+          </div>
+          <button class="btn btn-primary-custom" onclick="window.print()">
+            <i class="bi bi-printer me-2"></i>Print Summary
+          </button>
+        </div>
+      </div>
+
+      <div class="summary-page">
+        <!-- Header -->
+        <div class="summary-header">
+          <h2 style="font-weight:800; font-size:1.5rem; margin-bottom:0.25rem;">
+            <i class="bi bi-heart-pulse me-2" style="color:var(--primary-500);"></i>MedAnalyzer AI — Patient Health
+            Summary
+          </h2>
+          <p style="color:var(--text-muted); font-size:0.9rem;">
+            Generated on <%= new Date().toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'long',
+              year:'numeric' }) %>
+          </p>
+        </div>
+
+        <!-- Patient Info -->
+        <div class="summary-section">
+          <div class="summary-section-title">Patient Information</div>
+          <div class="row">
+            <div class="col-md-6">
+              <table style="width:100%;">
+                <tr>
+                  <td style="color:var(--text-muted); padding:0.3rem 1rem 0.3rem 0; font-size:0.9rem;">Name</td>
+                  <td style="font-weight:600; font-size:0.9rem;">
+                    <%= patient.name %>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="color:var(--text-muted); padding:0.3rem 1rem 0.3rem 0; font-size:0.9rem;">Age</td>
+                  <td style="font-weight:600; font-size:0.9rem;">
+                    <%= patient.age || 'N/A' %>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="color:var(--text-muted); padding:0.3rem 1rem 0.3rem 0; font-size:0.9rem;">Gender</td>
+                  <td style="font-weight:600; font-size:0.9rem;">
+                    <%= patient.gender || 'N/A' %>
+                  </td>
+                </tr>
+              </table>
+            </div>
+            <div class="col-md-6">
+              <table style="width:100%;">
+                <tr>
+                  <td style="color:var(--text-muted); padding:0.3rem 1rem 0.3rem 0; font-size:0.9rem;">Blood Group</td>
+                  <td style="font-weight:600; font-size:0.9rem;">
+                    <%= patient.bloodGroup || 'N/A' %>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="color:var(--text-muted); padding:0.3rem 1rem 0.3rem 0; font-size:0.9rem;">Health ID</td>
+                  <td style="font-weight:600; font-size:0.9rem;">
+                    <%= patient.healthId || 'N/A' %>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="color:var(--text-muted); padding:0.3rem 1rem 0.3rem 0; font-size:0.9rem;">Health Score</td>
+                  <td style="font-weight:800; font-size:0.9rem; color:var(--primary-500);">
+                    <%= patient.healthScore %> / 100
+                  </td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Latest Report Summary -->
+        <% if (latestReport && latestReport.processingStatus==='done' ) { %>
+          <!-- Lab Values -->
+          <% if (latestReport.extractedData && latestReport.extractedData.labValues &&
+            latestReport.extractedData.labValues.length> 0) { %>
+            <div class="summary-section">
+              <div class="summary-section-title">Lab Values (Latest Report — <%= new
+                  Date(latestReport.uploadDate).toLocaleDateString('en-IN') %>)</div>
+              <div class="table-responsive">
+                <table class="table-custom">
+                  <thead>
+                    <tr>
+                      <th>Test</th>
+                      <th>Value</th>
+                      <th>Unit</th>
+                      <th>Normal Range</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% latestReport.extractedData.labValues.forEach(lv=> { %>
+                      <tr>
+                        <td><strong>
+                            <%= lv.testName %>
+                          </strong></td>
+                        <td style="font-family:var(--font-mono);">
+                          <%= lv.value %>
+                        </td>
+                        <td>
+                          <%= lv.unit %>
+                        </td>
+                        <td>
+                          <%= lv.normalRange %>
+                        </td>
+                        <td><span class="status-badge status-<%= lv.status %>"><span class="status-dot"></span>
+                            <%= lv.status %>
+                          </span></td>
+                      </tr>
+                      <% }) %>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <% } %>
+
+              <!-- Medications -->
+              <% if (latestReport.extractedData && latestReport.extractedData.medications &&
+                latestReport.extractedData.medications.length> 0) { %>
+                <div class="summary-section">
+                  <div class="summary-section-title">Current Medications</div>
+                  <div class="d-flex flex-wrap gap-2">
+                    <% latestReport.extractedData.medications.forEach(med=> { %>
+                      <div
+                        style="background:var(--bg-primary); padding:0.5rem 1rem; border-radius:var(--radius-sm); border:1px solid var(--border-color);">
+                        <strong style="font-size:0.9rem;">
+                          <%= med.name %>
+                        </strong>
+                        <% if (med.dosage) { %><span style="color:var(--text-muted); font-size:0.8rem;"> — <%=
+                              med.dosage %></span>
+                          <% } %>
+                            <% if (med.frequency) { %><span style="color:var(--text-muted); font-size:0.8rem;"> (<%=
+                                  med.frequency %>)</span>
+                              <% } %>
+                      </div>
+                      <% }) %>
+                  </div>
+                </div>
+                <% } %>
+
+                  <!-- Drug Interactions -->
+                  <% if (latestReport.drugInteractions && latestReport.drugInteractions.length> 0) { %>
+                    <div class="summary-section">
+                      <div class="summary-section-title" style="color:var(--danger-500);">⚠ Drug Interaction Warnings
+                      </div>
+                      <% latestReport.drugInteractions.forEach(di=> { %>
+                        <div class="interaction-card interaction-<%= di.severity %>" style="margin-bottom:0.5rem;">
+                          <div style="flex:1;">
+                            <strong>
+                              <%= di.drug1 %>
+                            </strong> × <strong>
+                              <%= di.drug2 %>
+                            </strong>
+                            <span class="severity-badge severity-<%= di.severity %> ms-2">
+                              <%= di.severity %>
+                            </span>
+                            <p style="margin:0.25rem 0 0; font-size:0.85rem; color:var(--text-secondary);">
+                              <%= di.description %>
+                            </p>
+                          </div>
+                        </div>
+                        <% }) %>
+                    </div>
+                    <% } %>
+
+                      <!-- Anomalies -->
+                      <% if (latestReport.anomalies && latestReport.anomalies.length> 0) { %>
+                        <div class="summary-section">
+                          <div class="summary-section-title" style="color:var(--warning-500);">Anomalies & Flags</div>
+                          <% latestReport.anomalies.forEach(a=> { %>
+                            <div class="alert-custom alert-<%= a.severity === 'critical' ? 'critical' : 'warning' %>"
+                              style="margin-bottom:0.5rem;">
+                              <i class="bi bi-exclamation-triangle-fill"></i>
+                              <div>
+                                <strong>
+                                  <%= a.parameter %>
+                                </strong>: <%= a.value %> — <span style="font-size:0.85rem;">
+                                    <%= a.message %>
+                                  </span>
+                              </div>
+                            </div>
+                            <% }) %>
+                        </div>
+                        <% } %>
+
+                          <!-- Diseases -->
+                          <% if (latestReport.extractedData.diseases && latestReport.extractedData.diseases.length> 0) {
+                            %>
+                            <div class="summary-section">
+                              <div class="summary-section-title">Diagnosed Conditions</div>
+                              <div class="d-flex flex-wrap gap-2">
+                                <% latestReport.extractedData.diseases.forEach(d=> { %>
+                                  <span
+                                    style="background:rgba(239,68,68,0.08); color:var(--danger-600); padding:0.3rem 0.8rem; border-radius:var(--radius-full); font-size:0.85rem; font-weight:500;">
+                                    <%= d %>
+                                  </span>
+                                  <% }) %>
+                              </div>
+                            </div>
+                            <% } %>
+                              <% } else { %>
+                                <div class="summary-section">
+                                  <div class="empty-state" style="padding:1.5rem;">
+                                    <p style="color:var(--text-muted);">No analyzed reports available for summary.
+                                      Upload and analyze a report first.</p>
+                                  </div>
+                                </div>
+                                <% } %>
+
+                                  <!-- Report History -->
+                                  <div class="summary-section" style="border-bottom:none;">
+                                    <div class="summary-section-title">Report History</div>
+                                    <p style="font-size:0.85rem; color:var(--text-muted);">Total reports on file:
+                                      <strong>
+                                        <%= reports.length %>
+                                      </strong></p>
+                                    <% if (reports.length> 0) { %>
+                                      <% reports.slice(0, 5).forEach(r=> { %>
+                                        <div class="d-flex align-items-center gap-2 mb-1" style="font-size:0.85rem;">
+                                          <i class="bi bi-dash" style="color:var(--primary-500);"></i>
+                                          <span>
+                                            <%= r.reportType %>
+                                          </span>
+                                          <span style="color:var(--text-muted);">—</span>
+                                          <span style="color:var(--text-muted);">
+                                            <%= new Date(r.uploadDate).toLocaleDateString('en-IN') %>
+                                          </span>
+                                          <span class="processing-badge processing-<%= r.processingStatus %>"
+                                            style="font-size:0.7rem;">
+                                            <%= r.processingStatus %>
+                                          </span>
+                                        </div>
+                                        <% }) %>
+                                          <% } %>
+                                  </div>
+      </div>
+    </div>
+
+    <%- include('../partials/footer') %>

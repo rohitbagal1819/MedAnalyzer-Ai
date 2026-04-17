@@ -1,0 +1,98 @@
+<%- include('../partials/header') %>
+<%- include('../partials/navbar') %>
+
+<div class="page-container">
+  <div class="page-header">
+    <div class="d-flex align-items-center gap-3 mb-2">
+      <a href="/doctor/patient/<%= patient._id %>" class="btn btn-glass btn-sm"><i class="bi bi-arrow-left"></i></a>
+      <div>
+        <h1 class="page-title"><i class="bi bi-journal-text me-2" style="color:var(--accent-500);"></i>Notes for <%= patient.name %></h1>
+        <p class="page-subtitle">View and add consultation notes</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-8">
+      <!-- Add Note Form -->
+      <div class="card-custom mb-4">
+        <h3 style="font-weight:700; font-size:1rem; margin-bottom:1rem;">
+          <i class="bi bi-plus-circle me-2" style="color:var(--primary-500);"></i>Add New Note
+        </h3>
+        <form action="/doctor/notes/<%= patient._id %>" method="POST">
+          <div class="form-floating-custom">
+            <label for="note">Consultation Note</label>
+            <textarea class="form-control" id="note" name="note" rows="4" 
+                      placeholder="Enter your consultation note, observations, or recommendations..."
+                      required style="resize:vertical; min-height:120px;"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary-custom">
+            <i class="bi bi-check-lg me-2"></i>Save Note
+          </button>
+        </form>
+      </div>
+
+      <!-- Notes History -->
+      <div class="card-custom">
+        <h3 style="font-weight:700; font-size:1rem; margin-bottom:1.5rem;">
+          <i class="bi bi-clock-history me-2" style="color:var(--primary-500);"></i>Notes History (<%= notes.length %>)
+        </h3>
+        <% if (notes.length > 0) { %>
+          <% notes.forEach(n => { %>
+            <div class="note-card">
+              <div class="note-date">
+                <i class="bi bi-calendar3 me-1"></i>
+                <%= new Date(n.date).toLocaleDateString('en-IN', {weekday:'short', day:'numeric', month:'long', year:'numeric'}) %>
+                <span class="ms-2">
+                  <i class="bi bi-clock me-1"></i>
+                  <%= new Date(n.date).toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'}) %>
+                </span>
+              </div>
+              <div class="note-content"><%= n.note %></div>
+            </div>
+          <% }) %>
+        <% } else { %>
+          <div class="empty-state">
+            <div class="empty-state-icon">📝</div>
+            <h3>No Notes Yet</h3>
+            <p>Add your first consultation note for this patient above</p>
+          </div>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- Patient Info Sidebar -->
+    <div class="col-lg-4">
+      <div class="card-custom">
+        <h4 style="font-weight:700; font-size:0.95rem; margin-bottom:1rem;">Patient Info</h4>
+        <div class="d-flex align-items-center gap-3 mb-3">
+          <div class="patient-avatar"><%= patient.name.charAt(0).toUpperCase() %></div>
+          <div>
+            <div style="font-weight:600;"><%= patient.name %></div>
+            <div style="font-size:0.8rem; color:var(--text-muted);"><%= patient.email %></div>
+          </div>
+        </div>
+        <div style="font-size:0.85rem;">
+          <div class="d-flex justify-content-between mb-1">
+            <span style="color:var(--text-muted);">Age</span>
+            <span style="font-weight:600;"><%= patient.age || '—' %></span>
+          </div>
+          <div class="d-flex justify-content-between mb-1">
+            <span style="color:var(--text-muted);">Gender</span>
+            <span style="font-weight:600;"><%= patient.gender || '—' %></span>
+          </div>
+          <div class="d-flex justify-content-between mb-1">
+            <span style="color:var(--text-muted);">Blood Group</span>
+            <span style="font-weight:600;"><%= patient.bloodGroup || '—' %></span>
+          </div>
+          <div class="d-flex justify-content-between">
+            <span style="color:var(--text-muted);">Health Score</span>
+            <span style="font-weight:800; color:var(--primary-500);"><%= patient.healthScore %></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>
