@@ -6,6 +6,7 @@ and returns structured JSON with extracted data.
 """
 
 import os
+import tempfile
 import traceback
 from flask import Flask, request, jsonify
 from agents.ocr_agent import OCRAgent
@@ -16,8 +17,7 @@ from agents.scoring_agent import ScoringAgent
 app = Flask(__name__)
 
 # Configuration
-UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'temp_uploads')
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+UPLOAD_FOLDER = tempfile.gettempdir()
 
 
 @app.route('/health', methods=['GET'])

@@ -1,5 +1,6 @@
 const axios = require('axios');
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const FormData = require('form-data');
 const Report = require('../models/Report');
@@ -116,7 +117,7 @@ exports.deleteReport = async (req, res) => {
 
     // Remove file from filesystem if it exists
     if (report.fileName) {
-      const filePath = path.join(__dirname, '../uploads', report.fileName);
+      const filePath = path.join(os.tmpdir(), report.fileName);
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
       }
