@@ -40,6 +40,8 @@ exports.uploadReport = async (req, res) => {
       formData.append('file', fs.createReadStream(filePath));
       formData.append('report_id', report._id.toString());
       formData.append('file_type', fileType);
+      formData.append('openfda_api_key', process.env.OPENFDA_API_KEY || '');
+      formData.append('gemini_api_key', process.env.GEMINI_API_KEY || '');
 
       const aiResponse = await axios.post(
         `${process.env.PYTHON_AI_URL}/analyze`,
@@ -62,6 +64,10 @@ exports.uploadReport = async (req, res) => {
         reportType: result.report_type || 'Other',
         extractedData: {
           rawText: result.raw_text || '',
+          patientName: result.patient_name || '',
+          patientAge: result.patient_age || '',
+          patientGender: result.patient_gender || '',
+          summary: result.summary || '',
           labValues: result.lab_values || [],
           medications: result.medications || [],
           diseases: result.diseases || [],
@@ -69,6 +75,7 @@ exports.uploadReport = async (req, res) => {
           hospitalName: result.hospital_name || ''
         },
         drugInteractions: result.drug_interactions || [],
+        drugInfo: result.drug_info || [],
         anomalies: result.anomalies || [],
         healthScore: result.health_score || 0,
         processingStatus: 'done'

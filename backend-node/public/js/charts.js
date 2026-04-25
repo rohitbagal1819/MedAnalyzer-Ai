@@ -72,6 +72,7 @@ function createGradient(ctx, color1, color2) {
 
 /**
  * Initialize Lab Value Trend Chart
+ * Fixed: Properly aligns data points with global x-axis date labels
  */
 function initLabTrendChart(labData) {
   const ctx = document.getElementById('labTrendChart');
@@ -80,17 +81,40 @@ function initLabTrendChart(labData) {
   // Group lab values by test name
   const grouped = {};
   labData.forEach(item => {
+    const val = parseFloat(item.value);
+    if (isNaN(val)) return; // skip non-numeric values
+
     if (!grouped[item.testName]) {
-      grouped[item.testName] = [];
+      grouped[item.testName] = {};
     }
-    grouped[item.testName].push({
-      date: item.reportDate,
-      value: parseFloat(item.value) || 0
-    });
+    // Use the date string as key for alignment
+    const dateKey = item.reportDate || 'Unknown';
+    // If same test has multiple values on same date, keep the latest
+    grouped[item.testName][dateKey] = val;
   });
 
   // Get unique test names (max 6 for readability)
   const testNames = Object.keys(grouped).slice(0, 6);
+
+  if (testNames.length === 0) return; // No valid numeric data
+
+  // Get all unique dates sorted chronologically
+  const allDateKeys = [...new Set(labData.map(d => d.reportDate || 'Unknown'))]
+    .sort((a, b) => {
+      if (a === 'Unknown') return -1;
+      if (b === 'Unknown') return 1;
+      return new Date(a) - new Date(b);
+    });
+
+  // Format date labels for display
+  const dateLabels = allDateKeys.map(d => {
+    if (d === 'Unknown') return 'Latest';
+    try {
+      return new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: '2-digit' });
+    } catch {
+      return d;
+    }
+  });
 
   // Color palette
   const colors = [
@@ -102,14 +126,19 @@ function initLabTrendChart(labData) {
     { border: '#ec4899', bg: 'rgba(236, 72, 153, 0.1)' }
   ];
 
-  // Build datasets
+  // Build datasets — each test's data is aligned to the global date labels
   const datasets = testNames.map((name, i) => {
     const colorPair = colors[i % colors.length];
-    const dataPoints = grouped[name].sort((a, b) => new Date(a.date) - new Date(b.date));
+    const testData = grouped[name]; // { dateKey: value }
+
+    // Build data array aligned to allDateKeys, using null for missing dates
+    const dataPoints = allDateKeys.map(dateKey => {
+      return testData[dateKey] !== undefined ? testData[dateKey] : null;
+    });
 
     return {
       label: name,
-      data: dataPoints.map(d => d.value),
+      data: dataPoints,
       borderColor: colorPair.border,
       backgroundColor: colorPair.bg,
       borderWidth: 2,
@@ -118,15 +147,11 @@ function initLabTrendChart(labData) {
       pointBackgroundColor: colorPair.border,
       pointBorderColor: '#fff',
       pointBorderWidth: 2,
-      pointRadius: 4,
-      pointHoverRadius: 6
+      pointRadius: allDateKeys.length === 1 ? 6 : 4, // Bigger dots for single point
+      pointHoverRadius: 7,
+      spanGaps: true // Connect lines across null gaps
     };
   });
-
-  // Get all unique dates sorted
-  const allDates = [...new Set(labData.map(d => d.reportDate))]
-    .sort((a, b) => new Date(a) - new Date(b))
-    .map(d => new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }));
 
   // Text color based on theme
   const textColor = getComputedStyle(document.documentElement)
@@ -137,7 +162,7 @@ function initLabTrendChart(labData) {
   new Chart(ctx, {
     type: 'line',
     data: {
-      labels: allDates.length > 0 ? allDates : ['Latest'],
+      labels: dateLabels.length > 0 ? dateLabels : ['Latest'],
       datasets
     },
     options: {
@@ -167,7 +192,13 @@ function initLabTrendChart(labData) {
           cornerRadius: 8,
           padding: 12,
           titleFont: { family: "'Inter', sans-serif", weight: 600 },
-          bodyFont: { family: "'Inter', sans-serif" }
+          bodyFont: { family: "'Inter', sans-serif" },
+          callbacks: {
+            label: function(context) {
+              if (context.parsed.y === null) return null;
+              return context.dataset.label + ': ' + context.parsed.y;
+            }
+          }
         }
       },
       scales: {
@@ -177,7 +208,8 @@ function initLabTrendChart(labData) {
         },
         y: {
           grid: { color: gridColor, drawBorder: false },
-          ticks: { color: textColor, font: { family: "'Inter', sans-serif", size: 11 } }
+          ticks: { color: textColor, font: { family: "'Inter', sans-serif", size: 11 } },
+          beginAtZero: false
         }
       },
       animation: {

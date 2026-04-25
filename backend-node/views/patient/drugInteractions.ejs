@@ -4,11 +4,11 @@
 <div class="page-container">
   <div class="page-header">
     <h1 class="page-title"><i class="bi bi-capsule me-2" style="color:var(--warning-500);"></i>Drug Interactions</h1>
-    <p class="page-subtitle">Detected medications and potential interaction warnings from your reports</p>
+    <p class="page-subtitle">Detected medications, drug content, and potential interaction warnings from your reports</p>
   </div>
 
   <div class="row g-4">
-    <!-- Medications List -->
+    <!-- Medications List with OpenFDA Drug Info -->
     <div class="col-lg-5">
       <div class="card-custom">
         <h3 style="font-weight:700; font-size:1rem; margin-bottom:1.5rem;">
@@ -17,20 +17,73 @@
         </h3>
         <% if (medications.length > 0) { %>
           <% medications.forEach(med => { %>
-            <div class="d-flex align-items-center gap-3 mb-3 p-2" style="background:var(--bg-primary); border-radius:var(--radius-sm);">
-              <div style="width:36px;height:36px;border-radius:8px;background:rgba(139,92,246,0.1);display:flex;align-items:center;justify-content:center;">
-                <i class="bi bi-capsule" style="color:var(--accent-500);"></i>
-              </div>
-              <div style="flex:1;">
-                <div style="font-weight:600; font-size:0.9rem;"><%= med.name %></div>
-                <div style="font-size:0.75rem; color:var(--text-muted);">
-                  <% if (med.dosage) { %><%= med.dosage %><% } %>
-                  <% if (med.frequency) { %> • <%= med.frequency %><% } %>
+            <div class="mb-3 p-3" style="background:var(--bg-primary); border-radius:var(--radius-sm); border:1px solid var(--border-color);">
+              <div class="d-flex align-items-center gap-3 mb-2">
+                <div style="width:36px;height:36px;border-radius:8px;background:rgba(139,92,246,0.1);display:flex;align-items:center;justify-content:center; flex-shrink:0;">
+                  <i class="bi bi-capsule" style="color:var(--accent-500);"></i>
                 </div>
+                <div style="flex:1;">
+                  <div style="font-weight:600; font-size:0.95rem;"><%= med.name %></div>
+                  <div style="font-size:0.75rem; color:var(--text-muted);">
+                    <% if (med.dosage) { %><%= med.dosage %><% } %>
+                    <% if (med.frequency) { %> • <%= med.frequency %><% } %>
+                  </div>
+                </div>
+                <span style="font-size:0.7rem; color:var(--text-muted);">
+                  <%= new Date(med.reportDate).toLocaleDateString('en-IN', {day:'numeric',month:'short'}) %>
+                </span>
               </div>
-              <span style="font-size:0.7rem; color:var(--text-muted);">
-                <%= new Date(med.reportDate).toLocaleDateString('en-IN', {day:'numeric',month:'short'}) %>
-              </span>
+
+              <%/* Show OpenFDA drug info if available */%>
+              <% 
+                var drugDetail = null;
+                if (typeof drugInfoMap !== 'undefined' && drugInfoMap) {
+                  drugDetail = drugInfoMap[med.name.toLowerCase()] || drugInfoMap[med.name] || null;
+                }
+              %>
+              <% if (drugDetail && drugDetail.source === 'openfda') { %>
+                <div style="margin-top:0.5rem; padding-top:0.5rem; border-top:1px solid var(--border-color);">
+                  <% if (drugDetail.active_ingredients && drugDetail.active_ingredients.length > 0) { %>
+                    <div class="mb-1">
+                      <span style="font-size:0.7rem; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.5px;">
+                        Active Ingredients
+                      </span>
+                      <div class="d-flex flex-wrap gap-1 mt-1">
+                        <% drugDetail.active_ingredients.forEach(ing => { %>
+                          <span style="background:rgba(16,185,129,0.08); color:var(--success-600, #059669); padding:0.15rem 0.5rem; border-radius:var(--radius-full); font-size:0.7rem; font-weight:500;">
+                            <%= ing %>
+                          </span>
+                        <% }) %>
+                      </div>
+                    </div>
+                  <% } %>
+                  <% if (drugDetail.drug_class) { %>
+                    <div class="mb-1 mt-2">
+                      <span style="font-size:0.7rem; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.5px;">
+                        Drug Class
+                      </span>
+                      <div style="font-size:0.78rem; color:var(--text-primary); margin-top:2px;">
+                        <%= drugDetail.drug_class %>
+                      </div>
+                    </div>
+                  <% } %>
+                  <% if (drugDetail.indications) { %>
+                    <div class="mb-1 mt-2">
+                      <span style="font-size:0.7rem; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.5px;">
+                        Indications
+                      </span>
+                      <div style="font-size:0.78rem; color:var(--text-secondary); margin-top:2px; line-height:1.4;">
+                        <%= drugDetail.indications.substring(0, 200) %><%= drugDetail.indications.length > 200 ? '...' : '' %>
+                      </div>
+                    </div>
+                  <% } %>
+                  <div class="mt-2" style="text-align:right;">
+                    <span style="font-size:0.65rem; color:var(--text-muted); background:rgba(13,143,224,0.06); padding:0.15rem 0.5rem; border-radius:var(--radius-full);">
+                      <i class="bi bi-patch-check me-1" style="color:var(--primary-500);"></i>OpenFDA Verified
+                    </span>
+                  </div>
+                </div>
+              <% } %>
             </div>
           <% }) %>
         <% } else { %>
@@ -84,6 +137,25 @@
             <p>No known drug interactions detected among your medications</p>
           </div>
         <% } %>
+      </div>
+
+      <!-- OpenFDA API Status -->
+      <div class="card-custom mt-4">
+        <div class="d-flex align-items-center gap-3">
+          <div style="width:40px;height:40px;border-radius:10px;background:rgba(13,143,224,0.08);display:flex;align-items:center;justify-content:center; flex-shrink:0;">
+            <i class="bi bi-shield-check" style="color:var(--primary-500); font-size:1.2rem;"></i>
+          </div>
+          <div style="flex:1;">
+            <div style="font-weight:600; font-size:0.9rem;">Powered by OpenFDA</div>
+            <div style="font-size:0.78rem; color:var(--text-muted); line-height:1.4;">
+              Drug data and interaction checks are sourced from the U.S. Food & Drug Administration's open API.
+              Results are for informational purposes only.
+            </div>
+          </div>
+          <a href="https://open.fda.gov/" target="_blank" rel="noopener" style="font-size:0.8rem; font-weight:600; color:var(--primary-500); white-space:nowrap;">
+            Learn More <i class="bi bi-box-arrow-up-right ms-1"></i>
+          </a>
+        </div>
       </div>
     </div>
   </div>

@@ -1,146 +1,110 @@
 """
-Scoring Agent — Health Score Calculator
-Calculates a composite 0-100 health score based on lab values,
-anomalies, drug interactions, and data completeness.
+Scoring Agent — Health score calculation + anomaly detection
+Uses Gemini AI for intelligent scoring. No hardcoded scoring rules.
 """
 
 
 class ScoringAgent:
-    """Calculates health scores and detects anomalies."""
+    """Calculates health scores and detects anomalies using Gemini AI."""
+
+    def __init__(self, gemini_client=None):
+        """
+        Args:
+            gemini_client: GeminiClient instance for AI-based scoring
+        """
+        self.gemini_client = gemini_client
 
     def detect_anomalies(self, lab_values):
         """
         Detect anomalies from lab values.
-        Returns list of anomaly dicts.
+        Lab value status (normal/high/low/critical) is already determined by Gemini AI
+        in the NLP agent, so we just collect the abnormal ones.
         """
         anomalies = []
 
         for lv in lab_values:
             status = lv.get('status', 'normal')
             if status in ('high', 'low', 'critical'):
-                severity = 'critical' if status == 'critical' else ('warning' if status == 'high' else 'info')
-                message = self._generate_anomaly_message(lv)
-
+                severity = 'critical' if status == 'critical' else 'warning'
                 anomalies.append({
                     'parameter': lv.get('testName', 'Unknown'),
-                    'value': f"{lv.get('value', '')} {lv.get('unit', '')}",
+                    'value': f"{lv.get('value', '?')} {lv.get('unit', '')}",
                     'severity': severity,
-                    'message': message
+                    'message': self._build_anomaly_message(lv)
                 })
 
         return anomalies
 
-    def _generate_anomaly_message(self, lv):
-        """Generate a human-readable message for an anomaly."""
-        test_name = lv.get('testName', 'Unknown')
-        value = lv.get('value', '')
+    def _build_anomaly_message(self, lv):
+        """Build a descriptive anomaly message."""
+        name = lv.get('testName', 'Parameter')
+        value = lv.get('value', '?')
         unit = lv.get('unit', '')
-        status = lv.get('status', '')
+        status = lv.get('status', 'abnormal')
         normal_range = lv.get('normalRange', '')
 
-        messages = {
-            'critical': f"{test_name} is at a critical level ({value} {unit}). Normal range: {normal_range}. Immediate medical attention recommended.",
-            'high': f"{test_name} is above normal ({value} {unit}). Normal range: {normal_range}. Consult your doctor for evaluation.",
-            'low': f"{test_name} is below normal ({value} {unit}). Normal range: {normal_range}. Monitor and consult your doctor."
-        }
+        if status == 'critical':
+            msg = f"{name} is critically {'elevated' if status != 'low' else 'low'} at {value} {unit}."
+        elif status == 'high':
+            msg = f"{name} is elevated at {value} {unit}."
+        elif status == 'low':
+            msg = f"{name} is below normal at {value} {unit}."
+        else:
+            msg = f"{name} is {status} at {value} {unit}."
 
-        return messages.get(status, f"{test_name} value is {value} {unit}.")
+        if normal_range:
+            msg += f" Normal range: {normal_range}."
+        msg += " Please consult your doctor."
 
-    def calculate_score(self, lab_values, anomalies, drug_interactions, raw_text=''):
+        return msg
+
+    def calculate_score(self, lab_values=None, anomalies=None, drug_interactions=None, raw_text=''):
         """
-        Calculate composite health score (0-100).
-
-        Scoring breakdown:
-        - Normal lab values:          40 points
-        - No critical anomalies:      30 points
-        - No severe drug interactions: 20 points
-        - Data completeness:           10 points
+        Calculate health score using Gemini AI.
+        Falls back to simple calculation if Gemini is unavailable.
         """
-        score = 0
+        lab_values = lab_values or []
+        anomalies = anomalies or []
+        drug_interactions = drug_interactions or []
 
-        # ─── Lab Values Score (40 points max) ─────────
-        lab_score = self._score_lab_values(lab_values)
-        score += lab_score
+        # Try Gemini-based scoring
+        if self.gemini_client:
+            try:
+                medications = []  # Already extracted separately
+                diseases = []
+                score = self.gemini_client.calculate_health_score(
+                    lab_values=lab_values,
+                    medications=medications,
+                    diseases=diseases,
+                    drug_interactions=drug_interactions,
+                    anomalies=anomalies
+                )
+                return score
+            except Exception as e:
+                print(f"  ⚠ Gemini scoring failed: {e}, using fallback")
 
-        # ─── Anomaly Score (30 points max) ────────────
-        anomaly_score = self._score_anomalies(anomalies)
-        score += anomaly_score
+        # Fallback: simple math (no hardcoded medical data)
+        return self._fallback_score(lab_values, anomalies, drug_interactions)
 
-        # ─── Drug Interaction Score (20 points max) ───
-        drug_score = self._score_drug_interactions(drug_interactions)
-        score += drug_score
+    def _fallback_score(self, lab_values, anomalies, drug_interactions):
+        """Simple fallback scoring — no hardcoded medical data."""
+        score = 85
 
-        # ─── Completeness Score (10 points max) ───────
-        completeness_score = self._score_completeness(lab_values, raw_text)
-        score += completeness_score
-
-        # Ensure within bounds
-        score = max(0, min(100, round(score)))
-
-        return score
-
-    def _score_lab_values(self, lab_values):
-        """Score based on percentage of normal lab values. Max 40 points."""
         if not lab_values:
-            return 20  # No data, give partial score
+            return 50  # Can't score without data
 
         total = len(lab_values)
-        normal_count = sum(1 for lv in lab_values if lv.get('status') == 'normal')
+        abnormal = len([lv for lv in lab_values if lv.get('status') in ('high', 'low')])
+        critical = len([lv for lv in lab_values if lv.get('status') == 'critical'])
 
-        percentage_normal = normal_count / total if total > 0 else 0
-        return round(percentage_normal * 40)
+        if total > 0:
+            normal_ratio = (total - abnormal - critical) / total
+            score = int(normal_ratio * 80) + 10  # Base 10, max 90
 
-    def _score_anomalies(self, anomalies):
-        """Score based on absence of critical anomalies. Max 30 points."""
-        if not anomalies:
-            return 30  # No anomalies = perfect score
+        # Deductions for critical findings
+        score -= critical * 12
+        score -= len(drug_interactions) * 6
+        severe = len([di for di in drug_interactions if di.get('severity') == 'severe'])
+        score -= severe * 8
 
-        critical_count = sum(1 for a in anomalies if a.get('severity') == 'critical')
-        warning_count = sum(1 for a in anomalies if a.get('severity') == 'warning')
-        info_count = sum(1 for a in anomalies if a.get('severity') == 'info')
-
-        # Deductions
-        deduction = 0
-        deduction += critical_count * 10  # -10 per critical
-        deduction += warning_count * 4    # -4 per warning
-        deduction += info_count * 2       # -2 per info
-
-        return max(0, 30 - deduction)
-
-    def _score_drug_interactions(self, drug_interactions):
-        """Score based on absence of severe drug interactions. Max 20 points."""
-        if not drug_interactions:
-            return 20  # No interactions = perfect score
-
-        severe_count = sum(1 for di in drug_interactions if di.get('severity') == 'severe')
-        moderate_count = sum(1 for di in drug_interactions if di.get('severity') == 'moderate')
-        mild_count = sum(1 for di in drug_interactions if di.get('severity') == 'mild')
-
-        deduction = 0
-        deduction += severe_count * 10    # -10 per severe
-        deduction += moderate_count * 4   # -4 per moderate
-        deduction += mild_count * 1       # -1 per mild
-
-        return max(0, 20 - deduction)
-
-    def _score_completeness(self, lab_values, raw_text=''):
-        """Score based on completeness of extracted data. Max 10 points."""
-        points = 0
-
-        # At least some text extracted
-        if raw_text and len(raw_text) > 50:
-            points += 3
-
-        # Lab values extracted
-        if lab_values and len(lab_values) > 0:
-            points += 3
-
-        # Multiple lab values = more complete
-        if lab_values and len(lab_values) >= 5:
-            points += 2
-
-        # Very comprehensive
-        if lab_values and len(lab_values) >= 10:
-            points += 2
-
-        return min(10, points)
+        return max(0, min(100, score))

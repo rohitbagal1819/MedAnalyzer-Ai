@@ -81,6 +81,17 @@
 
         <!-- Latest Report Summary -->
         <% if (latestReport && latestReport.processingStatus==='done' ) { %>
+
+          <!-- AI Summary -->
+          <% if (latestReport.extractedData && latestReport.extractedData.summary) { %>
+            <div class="summary-section">
+              <div class="summary-section-title" style="color:var(--primary-600);"><i class="bi bi-robot me-2"></i>AI Clinical Summary</div>
+              <div class="alert-custom alert-primary" style="font-size:0.95rem; line-height:1.6; border-left:4px solid var(--primary-500);">
+                <%= latestReport.extractedData.summary %>
+              </div>
+            </div>
+          <% } %>
+
           <!-- Lab Values -->
           <% if (latestReport.extractedData && latestReport.extractedData.labValues &&
             latestReport.extractedData.labValues.length> 0) { %>

@@ -1,1 +1,1 @@
-# MedAnalyzer AI Utilities
+# MedAnalyzer AI — Utility modules

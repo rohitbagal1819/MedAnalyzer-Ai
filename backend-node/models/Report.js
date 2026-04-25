@@ -29,6 +29,12 @@ const reportSchema = new mongoose.Schema({
   },
   extractedData: {
     rawText: { type: String, default: '' },
+    reportType: String,
+    reportDate: Date,
+    patientName: String,
+    patientAge: String,
+    patientGender: String,
+    summary: String,
     labValues: [{
       testName: String,
       value: String,
@@ -56,6 +62,14 @@ const reportSchema = new mongoose.Schema({
       enum: ['mild', 'moderate', 'severe']
     },
     description: String
+  }],
+  drugInfo: [{
+    name: String,
+    active_ingredients: [String],
+    indications: String,
+    warnings: String,
+    drug_class: String,
+    source: { type: String, default: 'local' }
   }],
   anomalies: [{
     parameter: String,

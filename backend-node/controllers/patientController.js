@@ -137,6 +137,7 @@ exports.getDrugInteractions = async (req, res) => {
 
     const allMedications = [];
     const allInteractions = [];
+    const drugInfoMap = {};
 
     reports.forEach(r => {
       if (r.extractedData && r.extractedData.medications) {
@@ -155,13 +156,22 @@ exports.getDrugInteractions = async (req, res) => {
           });
         });
       }
+      // Collect drug info from OpenFDA lookups
+      if (r.drugInfo && r.drugInfo.length > 0) {
+        r.drugInfo.forEach(info => {
+          if (info.name) {
+            drugInfoMap[info.name.toLowerCase()] = info.toObject ? info.toObject() : info;
+          }
+        });
+      }
     });
 
     res.render('patient/drugInteractions', {
       title: 'Drug Interactions — MedAnalyzer AI',
       user: req.session.user,
       medications: allMedications,
-      interactions: allInteractions
+      interactions: allInteractions,
+      drugInfoMap
     });
   } catch (err) {
     console.error('Drug interactions error:', err);
